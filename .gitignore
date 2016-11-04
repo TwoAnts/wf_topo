@@ -1,7 +1,4 @@
 *.o
-
+*.pyc
 *.txt
-!host.txt
-!flows_dist.txt
-!web_server*
-!file_server*
+!conf_*.txt

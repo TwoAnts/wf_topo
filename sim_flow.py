@@ -40,10 +40,12 @@ class TrafficSimThread(threading.Thread):
 
     def run(self):
         print '====sim start===='
-        f = open(traffic_file, 'r')
+        f = open(self.traffic_file, 'r')
         i = 0
         begin = time.time()
         for line in f:
+            if line.strip().startswith('#'):
+                continue
             tmp = line.split()
             if len(tmp) >= 4:
                 self.fcts.append(0)
@@ -71,6 +73,8 @@ class TrafficSimThread(threading.Thread):
         i = 0
         o = open(self.trace_file, 'w')
         for line in f:
+            if line.strip().startswith('#'):
+                continue
             next_time, flow_size, req_h, resp_h = line.split()
             r = '%s\t%s\t%s\t%s\n' %(flow_size, req_h,\
                                      resp_h, self.fcts[i]) 

@@ -2,8 +2,15 @@
 
 import sys
 
+def usage():
+    print 'usage: cmp.py <file1> <file2> <file3>'
+    print ' <file1> is normal trace file'
+    print ' <file2> is flow scheduling trace file'
+    print ' <file3> is output file'
+
 if __name__ == '__main__':
     if len(sys.argv[1:]) < 3:
+        usage()
         exit()
 
     o1 = open(sys.argv[1], 'r')

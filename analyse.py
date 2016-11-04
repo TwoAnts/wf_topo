@@ -11,12 +11,11 @@ ranges = [
 (665600, 2665600, 2000000)]
 
 ranges2 = [
-(0, 100, 100),
-(100,600, 500),
-(600, 5600, 5000),
-(5600, 65600, 60000),
-(65600, 665600, 600000),
-(665600, 2665600, 2000000)]
+(0, 10, 10),
+(10,60, 50),
+(60, 560, 500),
+(560, 6560, 6000),
+(6560, 66560, 60000)]
 
 
 
@@ -54,7 +53,7 @@ if __name__ == '__main__':
 
     i_f = open(sys.argv[1], 'r')
 
-    init_analyse_list(analyse_list, ranges2)
+    init_analyse_list(analyse_list, ranges)
 
     for line in i_f:
         append_to_analyse_list(analyse_list, line)
@@ -65,7 +64,7 @@ if __name__ == '__main__':
     o_f = open(sys.argv[2], 'w')
     start = 0
     for e in analyse_list:
-        r = '%s %s %s %s %s %s\n' %(start, e['range'],\
+        r = '%s\t%s\t%s\t%s\t%s\t%s\n' %(start, e['range'],\
                     e['bytes'], e['fct1'], e['fct2'],\
                     e['sub'])
         start = e['range']

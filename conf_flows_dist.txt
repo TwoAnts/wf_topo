@@ -1,4 +1,4 @@
 file_server mds 0.3
 web_server mds 0.3
-file_server osd 0.1
-web_server osd 0.3
+web_server osd 0.2
+file_server osd 0.2

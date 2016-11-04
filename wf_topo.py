@@ -12,76 +12,148 @@ to complete.
 import getopt
 import sys
 trace_file = 'trace.txt'
+traffic_file = 'traffic.txt'
 sim = False
+pias = False
+depth=2
+fanout=2
+host_rate=10
+host_num_per_switch=4
+
+pingall=False
 
 from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.node import CPULimitedHost
 from mininet.node import RemoteController
 from mininet.link import OVSLink
+from mininet.link import TCLink
 from mininet.log import setLogLevel
 from mininet.cli import CLI
 
 from sim_flow import TrafficSimThread
 
-class WFTopo(Topo):
-    def build(self):
-        s = []
-        for i in range(3):
-            s.append(self.addSwitch('s%s' %(i+1), protocols='OpenFlow13'))
+class TreeTopo(Topo):
+    def build(self, depth=2, fanout=2, host_num_per_switch=4):
+        self.ovsmode = 'user'
+        self.hostNum = 1
+        self.switchNum = 1
+        self.host_num_per_switch = host_num_per_switch
+        
+        root = self.addSwitch('s0', protocols='OpenFlow13', datapath=self.ovsmode)
+        #print 'add %s' %root
+        self.addTree(depth, fanout, [root])
+    
+    def addTree(self, depth, fanout, parents):
+        isSwitch = depth > 0
+        new_parents = []
+        for parent in parents:
+            if isSwitch:
+                for _ in range(fanout):
+                    node = self.addSwitch('s%s' %self.switchNum, protocols='OpenFlow13', datapath=self.ovsmode)
+                    self.addLink(node, parent)
+                    #print 'add %s to %s' %(node, parent)
+                    new_parents.append(node)
+                    self.switchNum += 1
+            else:
+                for _ in range(self.host_num_per_switch):
+                    node = self.addHost('h%s' %self.hostNum)
+                    self.addLink(node, parent)
+                    #print 'add %s to %s' %(node, parent)
+                    self.hostNum += 1
 
-        self.addLink(s[0], s[1])
-        self.addLink(s[0], s[2])
-
-        h = []
-        for i in range(6):
-            h.append(self.addHost('h%s' %(i + 1)))
-            self.addLink(h[i], s[1+(i/3)])
+        if isSwitch:
+            self.addTree(depth-1, fanout, new_parents)
 
 def run_mn():
     "Create network and run simple performance test"
-    topo = WFTopo()
+    #topo = WFTopo()
+    topo = TreeTopo(depth=depth, fanout=fanout, 
+                         host_num_per_switch=host_num_per_switch)
+    host_num = topo.hostNum - 1
     net = Mininet( topo=topo,
                    host=CPULimitedHost, link=OVSLink,
                    controller=lambda name:RemoteController(name,
                             ip='127.0.0.1', port=6666),
                    autoStaticArp=False)
     net.start()
-    switch1 = net.getNodeByName('s1')
+    switch = net.getNodeByName('s0')
 
-    for i in range(6):
+    for i in range(host_num):
         host = net.getNodeByName('h%s' %(i+1))
         #r = host.cmd('python -m SimpleHTTPServer 8080 &')
         host.cmd('./server.o 8080 &')
     
     print '===clear qos'
-    r = switch1.cmd('./clear_qos.sh')
+    r = switch.cmd('./clear_qos.sh')
     print "result:\n%s\n" %r
     print 'qos queue after clear:\n%s\n%s\n' \
-            %(switch1.cmd('ovs-vsctl list qos'),
-                switch1.cmd('ovs-vsctl list queue')) 
+            %(switch.cmd('ovs-vsctl list qos'),
+                switch.cmd('ovs-vsctl list queue')) 
 
+    
     print '===set queue'
-    r = switch1.cmd('./set_queue_wf.sh')
+    if pias:
+        cmd = './set_queue_wf_args_dscp.sh %s %s %s %s' %(\
+                depth, fanout, int(host_rate*1e6), host_num_per_switch)
+    else:
+        cmd = './set_queue_wf_args.sh %s %s %s %s' %(\
+                depth, fanout, int(host_rate*1e6), host_num_per_switch)
+    print cmd
+    r = switch.cmd(cmd)
     print 'result:\n%s\n' %r
 
-    net.pingAll()
+    if pias:
+        r = switch.cmd('dmesg | tail')
+        print r
+
+
+    h1 = net.getNodeByName('h1') 
+    if pingall:
+       for i in range(1, host_num):
+            h = net.getNodeByName('h%s' %(i+1))
+            net.ping(hosts=[h1, h])
+
     if sim:
-        sim_thr = TrafficSimThread(net, trace_file=trace_file)
+        sim_thr = TrafficSimThread(net, traffic_file=traffic_file,\
+                                 trace_file=trace_file)
         sim_thr.start()
 
     CLI(net)
+
+    if pias:
+        print '===rmmod pias'
+        switch.cmd('sudo rmmod pias')
+        r = switch.cmd('dmesg | tail')
+        print r
+
     net.stop()
 
 if __name__ == '__main__':
-    options, args = getopt.getopt(sys.argv[1:], '', ['sim=', 'trace_file='])
+    options, args = getopt.getopt(sys.argv[1:], 'd:f:r:n:p', \
+                                   ['sim', 'traffic_file=', 'trace_file=', 'depth=', 'fanout=', \
+                                    'rate=', 'host_num_per_switch=', 'pingall', 'pias'])
     for k, v in options:
         if k in ('--sim', ):
-            sim = (v == 'True')
+            sim = True
+        elif k in ('--traffic_file', ):
+            traffic_file = v
+            print 'set traffic_file:%s' %traffic_file
         elif k in ('--trace_file', ):
             trace_file = v
             print 'set trace_file:%s' %trace_file
-            
+        elif k in ('-d', '--depth'):
+            depth = int(v)
+        elif k in ('-f', '--fanout'):
+            fanout = int(v)
+        elif k in ('-r', '--rate'):
+            host_rate=int(v)
+        elif k in ('-n', '--host_num_per_switch'):
+            host_num_per_switch=int(v)
+        elif k in ('-p', '--pingall'):
+            pingall=True
+        elif k in ('--pias'):
+            pias=True
 
     setLogLevel('info')
     run_mn()

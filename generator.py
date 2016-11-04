@@ -5,31 +5,41 @@ import sys
 import math
 from getopt import getopt
 
-host_file = 'host.txt'
-flow_distrb_file = 'flows_dist.txt'
-host = {}
+host_file = 'conf_host.txt'
+flow_distrb_file = 'conf_flows_dist.txt'
+req_host = {}
+resp_host = {}
 flow_distribution = []
-resp_host = []
-req_host = []
 htypes = {}
 distrb = {}
+
+def usage():
+    usage_str =\
+    '''
+generate flow(size, send time, req_host, resp_host)
+Options:
+    --load=<load> : 0~1, load of network
+    --flow_num=<num> : flow number to generate
+    --cap=<num> : Mb, the capicity of link
+    -o<dst_file> : file to write
+    '''
+    print usage_str
 
 def load_hosts():
     f = open(host_file, 'r')
     for line in f:
         tmp = line.split()
-        if len(tmp) >= 2:
-            ht = tmp[1]
+        if len(tmp) >= 3:
+            req_ht = tmp[1]
+            resp_ht = tmp[2]
             hname = tmp[0]
-            host[hname] = ht
-            htypes.setdefault(ht, [])
-            htypes[ht].append(hname)
+            req_host[hname] = req_ht
+            resp_host[hname] = resp_ht
+            htypes.setdefault(req_ht, [])
+            htypes[req_ht].append(hname)
+            htypes.setdefault(resp_ht, [])
+            htypes[resp_ht].append(hname)
 
-            if ht in ('web_server', 'file_server'):
-                req_host.append(hname)
-            else:
-                resp_host.append(hname)
-        
     f.close()
     print 'load %s' %host_file 
 
@@ -56,18 +66,22 @@ def choice_req_resp():
 
     if d_ht:
         req_h = random.choice(htypes[d_ht[0]])
-        resp_h = random.choice(htypes[d_ht[1]])
+        resps = htypes[d_ht[1]]
+        i = random.randint(0, len(resps) - 1)
+        resp_h = resps[i]
+        if req_h == resp_h:
+            resp_h = resps[(i+1)%len(resps)]
         return (req_h, resp_h)
     else:
         return None
 
-def traffic_fname(h1, h2):
-    if h1 not in host or \
-            h2 not in host:
+def traffic_fname(req_h, resp_h):
+    if req_h not in req_host or \
+            resp_h not in resp_host:
         return None
-    type1 = host[h1]
-    type2 = host[h2]
-    return '%s_%s.txt' %(type1, type2)
+    type1 = req_host[req_h]
+    type2 = resp_host[resp_h]
+    return 'conf_%s_%s.txt' %(type1, type2)
 
 def get_distribution(req_h, resp_h):
     fname = traffic_fname(req_h, resp_h)
@@ -114,7 +128,7 @@ if __name__ == '__main__':
     capacity = 10 #Mb
     flow_num = 1000
     output = 'traffic.txt'
-    options, args = getopt(sys.argv[1:], 'o:', ['load=', 'cap=', 'flow_num='])
+    options, args = getopt(sys.argv[1:], 'o:h', ['load=', 'cap=', 'flow_num=', 'help'])
     for k, v in options:
         if k in ('--load', ):
             load = float(v)
@@ -124,6 +138,13 @@ if __name__ == '__main__':
             flow_num = int(v)
         elif k in ('-o', ):
             output = v
+        elif k in ('-h', '--help'):
+            usage()
+            exit()
+        else:
+            print 'unsupported option %s' %k
+            usage()
+            exit()
 
     load_hosts()
     load_flow_distribution()
@@ -149,15 +170,23 @@ if __name__ == '__main__':
         times.append(nextTime(rate))
 
     output_file = open(output, 'w')
+    output_file.write('#flow_num:%s, load:%s, capacity:%s\n' %(\
+                            flow_num, load, capacity))
+
     for i in range(flow_num):
         output_file.write('%s %s %s %s\n' %(times[i], \
                 flows[i][2], flows[i][0], flows[i][1]))
+
+    output_file.write('#average flow size: %s KB\n' %avg)
+    output_file.write('#request speed: %s requests/second\n' %num)
+    output_file.write('#last for about %s seconds\n' %(len(flows)/num))
     output_file.close()
     
     print 'Auto generate %s flows' %len(flows)
     print 'The average flow size: %s KB' %avg
     print 'The average request speed: %s requests/second' %num
     print 'Dynamic flow emulation will last for about %s seconds' %(len(flows)/num)
+    print 'save to %s' %output
     print 'Done'
     
 

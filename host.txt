@@ -1,6 +1,0 @@
-h1 file_server
-h2 web_server
-h3 osd
-h4 osd
-h5 osd
-h6 mds

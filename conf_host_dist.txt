@@ -1,0 +1,7 @@
+host_num:16
+
+file_server 0.3
+web_server 0.7
+
+mds 0.4
+osd 0.6
