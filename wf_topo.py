@@ -35,7 +35,7 @@ from sim_flow import TrafficSimThread
 
 class TreeTopo(Topo):
     def build(self, depth=2, fanout=2, host_num_per_switch=4):
-        self.ovsmode = 'user'
+        self.ovsmode = 'kernel'
         self.hostNum = 1
         self.switchNum = 1
         self.host_num_per_switch = host_num_per_switch
@@ -93,18 +93,15 @@ def run_mn():
 
     
     print '===set queue'
-    if pias:
-        cmd = './set_queue_wf_args_dscp.sh %s %s %s %s' %(\
-                depth, fanout, int(host_rate*1e6), host_num_per_switch)
-    else:
-        cmd = './set_queue_wf_args.sh %s %s %s %s' %(\
+    cmd = './set_queue_wf_args.sh %s %s %s %s' %(\
                 depth, fanout, int(host_rate*1e6), host_num_per_switch)
     print cmd
     r = switch.cmd(cmd)
     print 'result:\n%s\n' %r
 
     if pias:
-        r = switch.cmd('dmesg | tail')
+        cmd = 'insmod pias.ko'
+        r = switch.cmd('%s && dmesg | tail' %cmd)
         print r
 
 

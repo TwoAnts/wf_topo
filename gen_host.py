@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import random
+import sys
+from getopt import getopt
 
 T_WEB = 'web_server'
 T_FILE = 'file_server'
@@ -11,10 +13,35 @@ resp_ts = [T_MDS, T_OSD]
 
 host_dist_file = 'conf_host_dist.txt'
 host_file = 'conf_host.txt'
+host_file_single = 'conf_host_single.txt'
 
+is_single = False
+
+req_d = 5
+resp_d = 5
 req_host_dist = []
 resp_host_dist = []
 
+def usage():
+    print 'generate host from conf_host_dist.txt'
+    print 'Options:'
+    print '    -s, --single : host only have one type'
+
+def host_type_single(req_d, resp_d, host_index, host_sum):
+    req_num = host_sum * req_d / (req_d + resp_d)
+    if host_index < req_num:
+        dist = req_host_dist
+        dist_sum = req_num
+    else:
+        dist = resp_host_dist
+        dist_sum = host_sum - req_num
+        host_index -= req_num
+
+    if host_index < int(dist[0][1] * dist_sum):
+        return dist[0][0]
+    else:
+        return dist[1][0]
+    
 def host_type(req_host_dist, resp_host_dist, i, j):
     req = None
     resp = None
@@ -32,6 +59,17 @@ def host_type(req_host_dist, resp_host_dist, i, j):
         
 
 if __name__ == '__main__':
+    options, args = getopt(sys.argv[1:], 's:', ['single='])
+    for k, v in options:
+        if k in ('-s', '--single'):
+            is_single = True
+            tmp = v.split('_')
+            req_d, resp_d = int(tmp[0]), int(tmp[1])
+        else:
+            usage()
+            exit()
+
+    
     f = open(host_dist_file, 'r')
 
     line = f.readline()
@@ -68,16 +106,29 @@ if __name__ == '__main__':
     print 'host_num:%s' %host_num
     print 'req %s' %req_host_dist
     print 'resp %s' %resp_host_dist
+    if is_single:
+        print 'req_d:resp_d %s:%s' %(req_d, resp_d)
 
-    f = open(host_file, 'w')
+    if is_single:
+        f = open(host_file_single, 'w')
+        f.write('#req:resp %s:%s\n' %(req_d, resp_d))
+        for h in range(host_num):
+            host = 'h%s' %(h+1)
+            t = host_type_single(req_d, resp_d, h, host_num)
+            f.write('%s %s\n' %(host, t))
+        f.close()
+        print 'gen %s' %host_file_single
+    else:
+        f = open(host_file, 'w')
     
-    for h in range(host_num):
-        host = 'h%s' %(h+1) 
-        t1, t2 = host_type(req_host_dist, resp_host_dist, random.random(), random.random())
-        f.write('%s %s %s\n' %(host, t1, t2))
+        for h in range(host_num):
+            host = 'h%s' %(h+1) 
+            t1, t2 = host_type(req_host_dist, resp_host_dist, random.random(), random.random())
+            f.write('%s %s %s\n' %(host, t1, t2))
     
-    f.close()
-    print 'gen %s' %host_file
+        f.close()
+        print 'gen %s' %host_file
+
     print 'Done!'
         
         

@@ -2,3 +2,4 @@
 *.pyc
 *.txt
 !conf_*.txt
+pias.ko

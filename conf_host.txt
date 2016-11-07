@@ -1,31 +1,17 @@
-h1 web_server mds
-
-h2 web_server mds
-
-h3 web_server mds
-
-h4 web_server mds
-
-h5 file_server osd
-
-h6 web_server osd
-
-h7 web_server mds
-
-h8 file_server osd
-
-h9 web_server osd
-
-h10 file_server mds
-
-h11 file_server mds
-
-h12 web_server mds
-
-h13 web_server mds
-
-h14 web_server mds
-
-h15 web_server mds
-
-h16 file_server osd
+#req:resp 1:4
+h1 osd
+h2 osd
+h3 osd
+h4 osd
+h5 osd
+h6 mds
+h7 osd
+h8 web_server
+h9 mds
+h10 mds
+h11 osd
+h12 osd
+h13 osd
+h14 osd
+h15 web_server
+h16 web_server

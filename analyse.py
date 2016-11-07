@@ -15,7 +15,9 @@ ranges2 = [
 (10,60, 50),
 (60, 560, 500),
 (560, 6560, 6000),
-(6560, 66560, 60000)]
+(6560, 66560, 60000),
+(66560, 667560, 601000),
+(66750, 1066750, 1000000)]
 
 
 
@@ -37,6 +39,8 @@ def append_to_analyse_list(analyse_list, content):
         return
     #print tmp
     size, req_h, resp_h, fct1, fct2, sub = tmp
+    if fct1 <= 0 or fct2 <= 0:
+        return
     size = int(size)
     for e in analyse_list:
         if size <= e['range']:
@@ -53,7 +57,7 @@ if __name__ == '__main__':
 
     i_f = open(sys.argv[1], 'r')
 
-    init_analyse_list(analyse_list, ranges)
+    init_analyse_list(analyse_list, ranges2)
 
     for line in i_f:
         append_to_analyse_list(analyse_list, line)

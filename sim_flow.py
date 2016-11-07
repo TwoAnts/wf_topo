@@ -21,7 +21,7 @@ class FlowThread(threading.Thread):
         result = stdout.split()
         if len(result) >= 2:
             #Get FCT for this flow and 
-            print '%s %s' %(self.host.name, stdout)
+            print '[%s] %s %s' %(self.id, self.host.name, stdout)
             fct = int(result[-2])
             self.parent.fcts[self.id] = fct
     

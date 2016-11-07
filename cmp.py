@@ -30,9 +30,13 @@ if __name__ == '__main__':
         if int(tmp1[-1]) == -1 or int(tmp2[-1]) == -1:
             print 'line %s timeout, ignore' %(i+1)
             continue
-        sub = int(tmp1[-1]) - int(tmp2[-1])
-        sum1 += int(tmp1[-1])
-        sum2 += int(tmp2[-1])
+
+        if int(tmp1[-1]) != 0 and int(tmp2[-1]) != 0:
+            sub = int(tmp1[-1]) - int(tmp2[-1])
+            sum1 += int(tmp1[-1])
+            sum2 += int(tmp2[-1])
+        else:
+            sub = 0
         tmp1.append(tmp2[-1])
         tmp1.append(str(sub))
         r = '\t'.join(tmp1)
