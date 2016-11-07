@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 	if (data_size * 1024 == read_count)
 		printf("From %s: %d KB %lu us\n", server, data_size, fct);
 	else
-		printf("We receive %d (of %d) bytes.\n", read_count, data_size * 1024);
+		printf("We receive %d (of %d) bytes. -2 us\n", read_count, data_size * 1024);
 
 	return 0;
 }

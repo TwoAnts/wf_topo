@@ -10,7 +10,7 @@ to complete.
 """
 
 import getopt
-import sys
+import sys, os
 trace_file = 'trace.txt'
 traffic_file = 'traffic.txt'
 sim = False
@@ -76,10 +76,19 @@ def run_mn():
                    controller=lambda name:RemoteController(name,
                             ip='127.0.0.1', port=6666),
                    autoStaticArp=False)
+
+
+    print '===restart ovs'
+    p = os.popen('./ovs_daemons_stop.sh && ./ovs_startup.sh')
+    for line in p:
+        print line   
+    p.close()
+    
+
     net.start()
     switch = net.getNodeByName('s0')
 
-    for i in range(host_num):
+    for i in xrange(host_num):
         host = net.getNodeByName('h%s' %(i+1))
         #r = host.cmd('python -m SimpleHTTPServer 8080 &')
         host.cmd('./server.o 8080 &')
@@ -90,7 +99,7 @@ def run_mn():
     print 'qos queue after clear:\n%s\n%s\n' \
             %(switch.cmd('ovs-vsctl list qos'),
                 switch.cmd('ovs-vsctl list queue')) 
-
+    
     
     print '===set queue'
     cmd = './set_queue_wf_args.sh %s %s %s %s' %(\
@@ -100,7 +109,8 @@ def run_mn():
     print 'result:\n%s\n' %r
 
     if pias:
-        cmd = 'insmod pias.ko'
+        devs = ','.join(['h%s-eth0' %(i+1) for i in xrange(host_num)])
+        cmd = 'insmod pias.ko param_dev=%s' %devs
         r = switch.cmd('%s && dmesg | tail' %cmd)
         print r
 

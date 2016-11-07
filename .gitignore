@@ -3,3 +3,5 @@
 *.txt
 !conf_*.txt
 pias.ko
+ovs_startup.sh
+ovs_daemons_stop.sh
